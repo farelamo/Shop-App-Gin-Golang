@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserImpl struct {
@@ -33,7 +35,7 @@ func (u *UserImpl) FindAll() (*[]models.User, error) {
 	for rows.Next() {
 		var user = models.User{}
 
-		err = rows.Scan(&user.Id, &user.Name, &user.User, &user.Pass, &user.Age, &user.CreatedAt, &user.UpdatedAt,)
+		err = rows.Scan(&user.Id, &user.Name, &user.Username, &user.Pass, &user.Age, &user.CreatedAt, &user.UpdatedAt,)
 		if err != nil {
 			return nil, err
 		}
@@ -51,15 +53,22 @@ func (u *UserImpl) Save(user *models.AddUser) (*models.User, error) {
 		return nil, errors.New("Name Must Be Filled")
 	}else if strconv.Itoa(user.Age) == "" {
 		return nil, errors.New("Age Must Be Filled")
-	}else if user.User == "" {
+	}else if user.Username == "" {
 		return nil, errors.New("username Must Be Filled")
 	}else if user.Pass == "" {
 		return nil, errors.New("Password Must Be Filled")
 	}
 
-	sql := `INSERT INTO users (name, username, password, age, payment_method) VALUES ($1, $2, $3, $4, $5) Returning *`
-	err := u.DB.QueryRow(sql, user.Name, user.User, user.Pass, user.Age,).Scan(
-		&newUser.Id, &newUser.Name, &newUser.User, &user.Pass, &newUser.Age, 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Pass), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Pass = string(hashedPassword)
+
+	sql := `INSERT INTO users (name, username, password, age) VALUES ($1, $2, $3, $4) Returning *`
+	err = u.DB.QueryRow(sql, user.Name, user.Username, user.Pass, user.Age,).Scan(
+		&newUser.Id, &newUser.Name, &newUser.Username, &user.Pass, &newUser.Age, 
 		&newUser.CreatedAt, &newUser.UpdatedAt,
 	)
 
@@ -73,7 +82,7 @@ func (u *UserImpl) Save(user *models.AddUser) (*models.User, error) {
 func (u *UserImpl) FindById(id int) (*models.User, error) {
 	var user = models.User{}
 	sql := `SELECT * FROM users WHERE id=($1)`
-	err := u.DB.QueryRow(sql, id).Scan(&user.Id, &user.Name, &user.User, &user.Pass, &user.Age, &user.CreatedAt, &user.UpdatedAt,)
+	err := u.DB.QueryRow(sql, id).Scan(&user.Id, &user.Name, &user.Username, &user.Pass, &user.Age, &user.CreatedAt, &user.UpdatedAt,)
 	if err != nil {
 		return nil, err		
 	}
@@ -85,7 +94,7 @@ func (u *UserImpl) Update(id int, user *models.User) (int, error) {
 		return 0, errors.New("Name Must Be Filled")
 	}else if strconv.Itoa(user.Age) == "" {
 		return 0, errors.New("Age Must Be Filled")
-	}else if user.User == "" {
+	}else if user.Username == "" {
 		return 0, errors.New("Username Must Be Filled")
 	}else if user.Pass == "" {
 		return 0, errors.New("Password Must Be Filled")
@@ -93,7 +102,7 @@ func (u *UserImpl) Update(id int, user *models.User) (int, error) {
 
 	sqlStatement := `UPDATE users SET name=$2, username=$3, password=$4, age=$5 WHERE id=$1;`
 	
-	result, err := u.DB.Exec(sqlStatement, id, user.Name,  user.User, user.Pass, user.Age,)
+	result, err := u.DB.Exec(sqlStatement, id, user.Name,  user.Username, user.Pass, user.Age,)
 	if err != nil {
 		e := fmt.Sprintf("error: %v occurred while updating user record with id: %d", err, id)
 		return 0, errors.New(e)
