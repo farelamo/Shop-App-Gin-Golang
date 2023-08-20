@@ -4,8 +4,8 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(256) NOT NULL,
-    username VARCHAR(256) NOT NULL,
-    password VARCHAR(256) NOT NULL,
+    username VARCHAR(12) NOT NULL,
+    password TEXT NOT NULL,
     age INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
