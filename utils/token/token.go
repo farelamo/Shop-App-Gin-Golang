@@ -68,3 +68,19 @@ func ExtractToken(c *gin.Context) string {
 
 	return ""
 }
+
+func GetUserId(c *gin.Context) (int, error) {
+	tokenString := ExtractToken(c)
+	token, err  := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error){
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	data   := claims["user_id"]
+	
+	return int(data.(float64)), nil
+}
