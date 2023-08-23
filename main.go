@@ -6,16 +6,18 @@ import (
 	"shop/middleware"
 
 	"shop/services/AuthService"
+	"shop/services/CartService"
 	"shop/services/CategoryService"
+	"shop/services/CheckoutService"
 	"shop/services/ProductService"
 	"shop/services/UserService"
-	"shop/services/CartService"
 
 	"shop/controllers/AuthController"
+	"shop/controllers/CartController"
 	"shop/controllers/CategoryController"
+	"shop/controllers/CheckoutController"
 	"shop/controllers/ProductController"
 	"shop/controllers/UserController"
-	"shop/controllers/CartController"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,6 +38,9 @@ func main(){
 	cartService 		:= CartService.NewCartService(DB)
 	cartController 		:= CartController.NewCartController(cartService)
 
+	checkoutService 	:= CheckoutService.NewCheckoutService(DB)
+	checkoutController  := CheckoutController.NewCheckoutController(checkoutService)
+
 	userService 		:= UserService.NewUserService(DB)
 	userController 		:= UserController.NewUserController(userService)
 
@@ -47,6 +52,8 @@ func main(){
 	
 	group.Use(middleware.AuthMiddleware())
 	
+	group.POST("/checkout", checkoutController.Save)
+
 	/* Cart Route */
 	group.GET("/cart", cartController.FindAll)
 	group.POST("/cart", cartController.Save)

@@ -86,9 +86,9 @@ func (f *CartServiceImpl) FindById(id int) (*models.Cart, error) {
 }
 
 func (f *CartServiceImpl) Update(id int, Cart *models.Cart) (int, error) {
-	sqlStatement := `UPDATE carts SET user_id=$2, product_id=$3, amount=$4, checkout=$5, total=$6 WHERE id=$1;`
+	sqlStatement := `UPDATE carts SET user_id=$2, product_id=$3, checkout=$4, amount=$5, total=$6 WHERE id=$1;`
 	
-	result, err := f.DB.Exec(sqlStatement, id, Cart.UserId, Cart.ProductId, Cart.Amount, Cart.Checkout, Cart.Total)
+	result, err := f.DB.Exec(sqlStatement, id, Cart.UserId, Cart.ProductId,  Cart.Checkout, Cart.Amount, Cart.Total)
 	if err != nil {
 		e := fmt.Sprintf("error: %v occurred while updating Cart record with id: %d", err, id)
 		return 0, errors.New(e)

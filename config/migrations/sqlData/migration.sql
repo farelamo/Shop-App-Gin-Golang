@@ -51,12 +51,14 @@ CREATE TABLE carts (
 
 CREATE TABLE checkouts (
     id SERIAL PRIMARY KEY,
-    product_id INT NOT NULL,
+    cart_id INT NOT NULL,
     user_id INT NOT NULL,
     bank_name VARCHAR(256) NOT NULL,
-  CONSTRAINT product_relation
-      FOREIGN KEY(product_id) 
-    REFERENCES products(id),
+    total_coupons INT NOT NULL,
+    total_checkout INT NOT NULL,
+  CONSTRAINT cart_relation
+      FOREIGN KEY(cart_id) 
+    REFERENCES carts(id),
   CONSTRAINT user_relation
       FOREIGN KEY(user_id) 
     REFERENCES users(id),

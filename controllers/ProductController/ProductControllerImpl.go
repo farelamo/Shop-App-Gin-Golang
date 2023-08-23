@@ -39,6 +39,7 @@ func (p *ProductControllerImpl) Save(ctx *gin.Context){
 		})
 		return
 	}
+	
 	ctx.JSON(http.StatusCreated, gin.H{
 		"Status" : true,
 		"data"	 : product,
