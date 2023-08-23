@@ -37,7 +37,7 @@ CREATE TABLE carts (
     user_id INT NOT NULL,
     product_id INT NOT NULL,
     checkout BOOLEAN NOT NULL,
-    paid BOOLEAN NOT NULL,
+    amount INT NOT NULL,
     total INT NOT NULL,
 	CONSTRAINT product_relation
       FOREIGN KEY(product_id) 
@@ -49,7 +49,7 @@ CREATE TABLE carts (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE histories (
+CREATE TABLE checkouts (
     id SERIAL PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT NOT NULL,

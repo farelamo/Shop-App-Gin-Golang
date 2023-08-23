@@ -1,10 +1,13 @@
 package CartService
 
 import (
-	"shop/models"
 	"database/sql"
 	"errors"
 	"fmt"
+	"shop/models"
+	product "shop/services/ProductService"
+	user "shop/services/UserService"
+	"strconv"
 )
 
 type CartServiceImpl struct {
@@ -18,11 +21,11 @@ func NewCartService(DB *sql.DB) CartService {
 }
 
 
-func (f *CartServiceImpl) FindAll() (*[]models.Cart, error) {
+func (f *CartServiceImpl) FindAll(userId int) (*[]models.Cart, error) {
 	var Carts = []models.Cart{}
 
-	sql 		:= `SELECT * FROM carts`
-	rows, err 	:= f.DB.Query(sql)
+	sql 		:= `SELECT * FROM carts where user_id = ($1)`
+	rows, err 	:= f.DB.Query(sql, strconv.Itoa(userId))
 	
 	if err != nil {
 		return nil, err
@@ -31,24 +34,37 @@ func (f *CartServiceImpl) FindAll() (*[]models.Cart, error) {
 
 	for rows.Next() {
 		var Cart = models.Cart{}
+		var hehe *bool
 
-		err = rows.Scan(&Cart.Id, &Cart.UserId, &Cart.ProductId, &Cart.Paid, &Cart.Checkout, &Cart.Total, &Cart.CreatedAt, &Cart.UpdatedAt)
+		err = rows.Scan(&Cart.Id, &Cart.UserId, &Cart.ProductId, &Cart.Checkout, &Cart.Amount, &Cart.Total, &Cart.CreatedAt, &Cart.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
-
+		fmt.Println(hehe)
 		Carts = append(Carts, Cart)
 	}
 
 	return &Carts, nil
 }
 
-func (f *CartServiceImpl) Save(Cart *models.AddCart) (*models.Cart, error) {
+func (f *CartServiceImpl) Save(userId int, Cart *models.AddCart) (*models.Cart, error) {
 	var newCart = models.Cart{}
 
-	sql := `INSERT INTO carts (user_id, product_id, paid, checkout, total) VALUES ($1) Returning *`
-	err := f.DB.QueryRow(sql, Cart.UserId, Cart.ProductId, Cart.Paid, Cart.Checkout, Cart.Total,).Scan(
-		&newCart.Id, &newCart.UserId, &newCart.ProductId, &newCart.Paid, &newCart.Checkout, &newCart.Total, 
+	productService 	:= product.NewProductService(f.DB)
+	_, err 			:= productService.FindById(Cart.ProductId)
+	if err != nil {
+		return nil, err
+	}
+
+	userService 	:= user.NewUserService(f.DB)
+	_, err 			= userService.FindById(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := `INSERT INTO carts (user_id, product_id, amount, checkout, total) VALUES ($1, $2, $3, $4, $5) Returning *`
+	err = f.DB.QueryRow(sql, userId, Cart.ProductId, Cart.Amount, false, Cart.Total,).Scan(
+		&newCart.Id, &newCart.UserId, &newCart.ProductId, &newCart.Checkout, &newCart.Amount, &newCart.Total, 
 		&newCart.CreatedAt, &newCart.UpdatedAt,
 	)
 
@@ -62,7 +78,7 @@ func (f *CartServiceImpl) Save(Cart *models.AddCart) (*models.Cart, error) {
 func (f *CartServiceImpl) FindById(id int) (*models.Cart, error) {
 	var Cart = models.Cart{}
 	sql := `SELECT * FROM carts WHERE id=($1)`
-	err := f.DB.QueryRow(sql, id).Scan(&Cart.Id, &Cart.UserId, &Cart.ProductId, &Cart.Paid, &Cart.Checkout, &Cart.Total, &Cart.CreatedAt, &Cart.UpdatedAt,)
+	err := f.DB.QueryRow(sql, id).Scan(&Cart.Id, &Cart.UserId, &Cart.ProductId, &Cart.Checkout, &Cart.Amount, &Cart.Total, &Cart.CreatedAt, &Cart.UpdatedAt,)
 	if err != nil {
 		return nil, err		
 	}
@@ -70,9 +86,9 @@ func (f *CartServiceImpl) FindById(id int) (*models.Cart, error) {
 }
 
 func (f *CartServiceImpl) Update(id int, Cart *models.Cart) (int, error) {
-	sqlStatement := `UPDATE carts SET user_id=$2, product_id=$3, paid=$4, checkout=$5, total=$6 WHERE id=$1;`
+	sqlStatement := `UPDATE carts SET user_id=$2, product_id=$3, amount=$4, checkout=$5, total=$6 WHERE id=$1;`
 	
-	result, err := f.DB.Exec(sqlStatement, id, Cart.UserId, Cart.ProductId, Cart.Paid, Cart.Checkout, Cart.Total)
+	result, err := f.DB.Exec(sqlStatement, id, Cart.UserId, Cart.ProductId, Cart.Amount, Cart.Checkout, Cart.Total)
 	if err != nil {
 		e := fmt.Sprintf("error: %v occurred while updating Cart record with id: %d", err, id)
 		return 0, errors.New(e)
@@ -90,11 +106,21 @@ func (f *CartServiceImpl) Update(id int, Cart *models.Cart) (int, error) {
 	return int(count), nil
 }
 
-func (f *CartServiceImpl) Delete(id int) (int, error) {
+func (f *CartServiceImpl) Delete(userId int, id int) (int, error) {
+	data, err := f.FindById(id)
+	if err != nil {
+		e := fmt.Sprintf("error: %v product with id %d not found", err, id)
+		return 0, errors.New(e)
+	}
+
+	if data.UserId != userId {
+		return 0, errors.New("Sorry, this is not your product cart")
+	}
+
 	sql := `DELETE FROM carts WHERE id=$1;`
 	res, err := f.DB.Exec(sql, id)
 	if err != nil {
-		e := fmt.Sprintf("error: %v occurred while delete Cart record with id: %d", err, id)
+		e := fmt.Sprintf("error: %v occurred while delete product cart record with id: %d", err, id)
 		return 0, errors.New(e)
 	}
 	count, err := res.RowsAffected()
@@ -104,7 +130,7 @@ func (f *CartServiceImpl) Delete(id int) (int, error) {
 	}
 
 	if count == 0 {
-		e := fmt.Sprintf("could not delete the Cart, there might be no data for ID %d", id)
+		e := fmt.Sprintf("could not delete the product cart, there might be no data for ID %d", id)
 		return 0, errors.New(e) 
 	}
 	return int(count), nil	

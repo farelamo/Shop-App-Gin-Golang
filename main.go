@@ -9,11 +9,13 @@ import (
 	"shop/services/CategoryService"
 	"shop/services/ProductService"
 	"shop/services/UserService"
+	"shop/services/CartService"
 
 	"shop/controllers/AuthController"
 	"shop/controllers/CategoryController"
 	"shop/controllers/ProductController"
 	"shop/controllers/UserController"
+	"shop/controllers/CartController"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,16 +33,24 @@ func main(){
 	productService 		:= ProductService.NewProductService(DB)
 	productController 	:= ProductController.NewProductController(productService)
 
+	cartService 		:= CartService.NewCartService(DB)
+	cartController 		:= CartController.NewCartController(cartService)
+
 	userService 		:= UserService.NewUserService(DB)
 	userController 		:= UserController.NewUserController(userService)
 
 	group := router.Group("/api")
-
+	
 	/* Auth Route */
 	group.POST("/login", authController.LoginCheck)
 	group.POST("/register", userController.Save)
-
+	
 	group.Use(middleware.AuthMiddleware())
+	
+	/* Cart Route */
+	group.GET("/cart", cartController.FindAll)
+	group.POST("/cart", cartController.Save)
+	group.DELETE("/cart/:id", cartController.Delete)
 
 	/* Category Route */
 	group.GET("/category", categoryController.FindAll)

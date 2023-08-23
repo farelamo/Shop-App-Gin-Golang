@@ -101,7 +101,7 @@ func (p *ProductControllerImpl) FindById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"Status" : false,
-			"message": err,
+			"message": "data with id " + strconv.Itoa(id) + " not found",
 		})
 		return
 	}

@@ -8,19 +8,29 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"shop/utils/token"
 )
 
 type CartControllerImpl struct {
 	CartService CartService
 }
 
-func NewCategoryController(CartService CartService) CartController {
+func NewCartController(CartService CartService) CartController {
 	return &CartControllerImpl{
 		CartService: CartService,
 	}
 }
 
 func (c *CartControllerImpl) Save(ctx *gin.Context){
+	userId, err := token.GetUserId(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"Status" : false,
+			"message": err,
+		})
+		return
+	}
+
 	var Cart models.AddCart
 
 	if err := ctx.ShouldBindJSON(&Cart); err != nil {
@@ -31,7 +41,7 @@ func (c *CartControllerImpl) Save(ctx *gin.Context){
 		return
 	}
 	
-	cart, err := c.CartService.Save(&Cart)
+	cart, err := c.CartService.Save(userId, &Cart)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"Status" : false,
@@ -46,12 +56,22 @@ func (c *CartControllerImpl) Save(ctx *gin.Context){
 }
 
 func (c *CartControllerImpl) FindAll(ctx *gin.Context) {
-	categories, err := c.CartService.FindAll()
 
+	userId, err := token.GetUserId(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"Status" : false,
 			"message": err,
+		})
+		return
+	}
+
+	categories, err := c.CartService.FindAll(userId)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"Status" : false,
+			"message": err.Error(),
 		})
 		return
 	}
@@ -75,7 +95,7 @@ func (c *CartControllerImpl) FindById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"Status" : false,
-			"message": err,
+			"message": "data with id " + strconv.Itoa(id) + " not found",
 		})
 		return
 	}
@@ -131,7 +151,16 @@ func (c *CartControllerImpl) Delete(ctx *gin.Context) {
 		return
 	}
 
-	count, err := c.CartService.Delete(id)
+	userId, err := token.GetUserId(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"Status" : false,
+			"message": err,
+		})
+		return
+	}
+
+	count, err := c.CartService.Delete(userId, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"Status" : false,

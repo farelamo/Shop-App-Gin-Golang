@@ -6,7 +6,7 @@ type Cart struct {
 	Id 				int 		`json:"id,omitempty"`
 	UserId			int 		`json:"user_id,omitempty"`
 	ProductId		int 		`json:"product_id,omitempty"`
-	Paid 			bool 		`json:"paid,omitempty"`
+	Amount 			int 		`json:"amount,omitempty"`
 	Checkout 		bool 		`json:"checkout,omitempty"`
 	Total 			int 		`json:"total,omitempty"`
 	CreatedAt   	time.Time 	`json:"created_at,omitempty"`
@@ -14,9 +14,7 @@ type Cart struct {
 }
 
 type AddCart struct {
-	UserId			int 		`json:"user_id,omitempty"`
-	ProductId		int 		`json:"product_id,omitempty"`
-	Paid 			bool 		`json:"paid,omitempty"`
-	Checkout 		bool 		`json:"checkout,omitempty"`
-	Total 			int 		`json:"total,omitempty"`
+	ProductId		int 	`json:"product_id,omitempty"`
+	Amount 			int 	`json:"amount,omitempty"`
+	Total 			int 	`json:"total,omitempty"`
 }
