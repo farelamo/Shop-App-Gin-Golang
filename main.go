@@ -20,8 +20,26 @@ import (
 	"shop/controllers/UserController"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/farelamo/Shop-App-Gin-Golang/APIdocs"
+	swaggerFiles "github.com/swaggo/files"
+    ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title Shop API
+// @version 1.0
+// @description List API of Shop Application
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://swagger.io/support/
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/license/LICENSE-2.0.html
+
+// @host localhost:8000
+// @Basepath /
+// @schemes http
 func main(){
 	router 	:= gin.Default()
 	DB 		:= config.Connect()
@@ -44,9 +62,19 @@ func main(){
 	userService 		:= UserService.NewUserService(DB)
 	userController 		:= UserController.NewUserController(userService)
 
+	url   := ginSwagger.URL("http://localhost:8000/swagger/doc.json")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+
 	group := router.Group("/api")
-	
+
 	/* Auth Route */
+	// @Summary Login API for Shop Application
+	// @Description Get JWT Token for login access
+	// @Tags root
+	// @Accept */*
+	// @Produce json
+	// @Success 200 {object} map[string]interface{}
+	// @Router /api/login [post]
 	group.POST("/login", authController.LoginCheck)
 	group.POST("/register", userController.Save)
 	
